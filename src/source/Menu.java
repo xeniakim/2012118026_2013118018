@@ -24,7 +24,9 @@ public class Menu {
         	System.out.println("Export to CSV");
         	break;
         case 3:
-        	this.manipulateData();
+        	while (true)
+        		if (this.manipulateData())
+        			break;
         	break;
         case 4:
         	System.exit(0);
@@ -34,7 +36,7 @@ public class Menu {
         }
 	}
 	
-	public void manipulateData() {
+	public boolean manipulateData() {
     	System.out.print("Please input the instruction number "
     			+ "(1: Show Tables, 2: Describe Table, 3: Select, 4: Insert, "
     			+ "5: Delete, 6: Update, 7: Drop Table, 8: Back to main) : ");
@@ -63,10 +65,12 @@ public class Menu {
     		break;
     	case 8:
     		System.out.println("Back to main");
-    		break;
+    		return true;
     	default:
     		System.out.println("WRONG!");
     	}
+    	
+    	return false;
 	}
 	
 }
