@@ -22,8 +22,8 @@ public class UpdateSQLBuilder {
 	public UpdateSQLBuilder values(String... values) {
 		this._values = values;
 		
-		//for (int i = 0; i < this._values.length; i++) 
-		//	this._values[i] = String.format("'%s'", this._values[i]);
+		for (int i = 0; i < this._values.length; i++) 
+			this._values[i] = String.format("'%s'", this._values[i]);
 			
 		return this;
 	}
