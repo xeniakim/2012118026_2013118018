@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 //WHERE에 들어갈 조건문을 만들어 주는 클래스 new ConditionBuilder().ask()로 사용
 public class ConditionBuilder {
+	private Scanner sc;
 	private StringBuilder output = new StringBuilder();
 	
 	//column을 골라보아
@@ -15,18 +16,23 @@ public class ConditionBuilder {
 	//더 할거니?
 	private final String BOOLOPSQUESTION = "Please specify the condition (1: AND, 2: OR, 3: finish) : ";
 	
+	public ConditionBuilder(Scanner scanner) {
+		this.sc = scanner;
+		
+		if(sc.hasNextLine())
+			sc.nextLine();
+	}
+	
 	public String ask() {
 		
 		boolean finished = false;
 		
 		while (!finished) {
-			Scanner sc = new Scanner(System.in);
-			
+
 			try {
 				System.out.print(this.COLUMNQUESTION);
 				String opsAnswer = sc.nextLine();
 				if (opsAnswer.isEmpty()) {
-					sc.close();
 					return null;
 				}
 					 
@@ -72,10 +78,12 @@ public class ConditionBuilder {
 					break;
 				case "3":
 					finished = true;
+					if(sc.hasNextLine())
+						sc.nextLine();
 					break;
 				}
 			} finally {
-				sc.close();
+
 			}
 		} 
 		
