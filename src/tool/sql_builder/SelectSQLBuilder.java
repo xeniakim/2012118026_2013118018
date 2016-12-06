@@ -40,8 +40,10 @@ public class SelectSQLBuilder {
 	public SelectSQLBuilder order_by(String... order_by) {
 		this._order_by = order_by;
 		
-		for (int i = 0; i < this._order_by.length; i++)
-			this._order_by[i] = String.format("\"%s\"", this._order_by[i]);
+		if (this._order_by != null) {
+			for (int i = 0; i < this._order_by.length; i++)
+				this._order_by[i] = String.format("\"%s\"", this._order_by[i]);
+		}
 		
 		return this;
 	}

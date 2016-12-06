@@ -6,6 +6,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import tool.sql_builder.SQLBuilder;
 
@@ -29,9 +30,15 @@ public class PostgresConnector {
 		System.out.println(new String(new char[columnStr.length()]).replace("\0", "="));
 		
 		//value들 출력
-		for (int i = 1; i < result.length; i++)
+		for (int i = 1; i < result.length; i++) {
 			System.out.println(String.join(", ", result[i]));
+			if (i % 10 == 0) {
+				System.out.print("<Press enter>");
+				new Scanner(System.in).nextLine();
+			}
+		}
 		
+		System.out.println(String.format("<%s rows selected>" , result.length - 1));
 		
 	}
 
