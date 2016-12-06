@@ -38,8 +38,6 @@ public class PostgresConnector {
 			}
 		}
 		
-		System.out.println(String.format("<%s rows selected>" , result.length - 1));
-		
 	}
 
 	//information_schema에서 현재 schema의 table정보 불러옮

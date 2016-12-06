@@ -52,6 +52,7 @@ public class Select {
 		try {
 			String[][] result = pc.executeSelect(sql);
 			pc.printSelectResult(result);
+			System.out.print(String.format("<%s rows selected>", result.length - 1));
 		} catch (SQLException e) {
 			System.out.println("<error detected>");
 		}
