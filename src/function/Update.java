@@ -38,9 +38,9 @@ public class Update {
 		PostgresConnector pc = new PostgresConnector(mc);
 		try {
 			int result = pc.executeInsert(sql);
-			System.out.print(String.format("<%s rows updated>", result));
+			System.out.println(String.format("<%s rows updated>", result));
 		} catch (SQLException e) {
-			System.out.println("<0 row updated due to error>");
+			System.out.println("<error detected> ");
 		}
 	}
 }

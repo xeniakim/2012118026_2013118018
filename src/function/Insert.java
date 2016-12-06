@@ -34,7 +34,7 @@ public class Insert {
 		PostgresConnector pc = new PostgresConnector(mc);
 		try {
 			int result = pc.executeInsert(sql);
-			System.out.print(String.format("<%s rows inserted>", result));
+			System.out.println(String.format("<%s rows inserted>", result));
 		} catch (SQLException e) {
 			System.out.println("<0 row inserted due to error>");
 		}

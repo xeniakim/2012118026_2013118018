@@ -29,7 +29,7 @@ public class Delete {
 		PostgresConnector pc = new PostgresConnector(mc);
 		try {
 			int result = pc.executeDelete(sql);
-			System.out.print(String.format("<%s rows deleted>", result));
+			System.out.println(String.format("<%s rows deleted>", result));
 		} catch (SQLException e) {
 			System.out.println("<0 row inserted due to error>");
 		}
