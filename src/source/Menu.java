@@ -2,8 +2,12 @@ package source;
 
 import java.util.Scanner;
 
+import function.Delete;
 import function.DescribeTable;
+import function.Insert;
+import function.Select;
 import function.ShowTables;
+import function.Update;
 
 public class Menu {
 	Scanner mn;
@@ -49,16 +53,16 @@ public class Menu {
     		new DescribeTable();
     		break;
     	case 3:
-    		System.out.println("Select");
+    		new Select();
     		break;
     	case 4:
-    		System.out.println("Insert");
+    		new Insert();
     		break;
     	case 5:
-    		System.out.println("Delete");
+    		new Delete();
     		break;
     	case 6:
-    		System.out.println("Update");
+    		new Update();
     		break;
     	case 7:
     		System.out.println("Drop Table");
