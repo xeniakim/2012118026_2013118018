@@ -2,6 +2,7 @@ package source;
 
 import java.util.Scanner;
 
+import function.DescribeTable;
 import function.ShowTables;
 
 public class Menu {
@@ -43,7 +44,7 @@ public class Menu {
     		new ShowTables();
     		break;
     	case 2:
-    		System.out.println("Describe Table");
+    		new DescribeTable();
     		break;
     	case 3:
     		System.out.println("Select");
