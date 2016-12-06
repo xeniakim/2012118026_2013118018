@@ -32,9 +32,19 @@ public class Select {
 		String order_input = sc.nextLine();
 		String[] order = (order_input.isEmpty()) ? null : order_input.replaceAll(" ", "").split(",");
 		
-		System.out.print("Please specify the sorting criteria (Press enter : skip) : ");
-		String order_how_input = sc.nextLine();
-		String[] order_how = (order_how_input.isEmpty()) ? null : order_how_input.replaceAll(" ", "").split(",");
+		String[] order_how = null;
+		if (order != null) {
+			while (true) {
+				System.out.print("Please specify the sorting criteria (Press enter : skip) : ");
+				String order_how_input = sc.nextLine();
+				order_how = (order_how_input.isEmpty()) ? null : order_how_input.replaceAll(" ", "").split(",");
+				
+				if (order_how != null && order.length != order_how.length) 
+					System.out.println(String.format("Please input same amount of criteria(%s)", order.length));
+				else
+					break;
+			}
+		}
 		
 		String sql = SQLBuilder
 				.select(columns)
