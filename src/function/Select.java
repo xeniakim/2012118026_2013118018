@@ -13,10 +13,10 @@ public class Select {
 		Scanner sc = new Scanner(System.in);
 		
 		System.out.print("Please specify the table name : ");
-		String table_name = sc.next();
+		String table_name = sc.nextLine();
 		
 		System.out.print("Please specify columns which you want to retrieve (ALL : *) : ");
-		String c_input = sc.next();
+		String c_input = sc.nextLine();
 		
 		String[] columns;
 		
@@ -64,7 +64,8 @@ public class Select {
 			pc.printSelectResult(result);
 			System.out.print(String.format("<%s rows selected>", result.length - 1));
 		} catch (SQLException e) {
-			System.out.println("<error detected>");
+			
+			System.out.println("<error detected>" + sql);
 		}
 	}
 }

@@ -18,9 +18,6 @@ public class ConditionBuilder {
 	
 	public ConditionBuilder(Scanner scanner) {
 		this.sc = scanner;
-		
-		if(sc.hasNextLine())
-			sc.nextLine();
 	}
 	
 	public String ask() {
