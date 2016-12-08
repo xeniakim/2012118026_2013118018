@@ -4,15 +4,36 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
 
 public class MakeConnection {
-	private static String DB_DRIVER;
-	private static String DB_CONNECTION_URL;
-	private static String DB_USER;
-	private static String DB_PASSWORD;
+	private Connection DB_CONNECTION;
+	private String DB_CONNECTION_URL;
+	private String DB_USER;
+	private String DB_PASSWORD;
 	
 	//추가됨
-	private static String DB_SCHEMA;
+	private String DB_SCHEMA;
+	
+	public int Connect() {
+		Properties props = new Properties();
+		props.setProperty("user",this.DB_USER);
+		props.setProperty("password",this.DB_PASSWORD);
+		
+		try {
+			this.DB_CONNECTION = DriverManager.getConnection(this.DB_CONNECTION_URL, props);
+			this.DB_CONNECTION.setSchema(this.DB_SCHEMA);
+			this.DB_CONNECTION.setAutoCommit(true);
+			
+			return 1; //성공하면 1
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0; //실패하면 0
+		}
+	}
 	
 	public int takeConnectionInfo() {
 		BufferedReader connection_info;
@@ -60,8 +81,8 @@ public class MakeConnection {
 				e.printStackTrace();
 			}
             
-            System.out.println(line);
         }
+        
         try {
 			connection_info.close();
 		} catch (IOException e) {
@@ -69,12 +90,30 @@ public class MakeConnection {
 			e.printStackTrace();
 			return 0;
 		}
-        
-        
         /*
          * TODO: 파일 내 띄어쓰기 처리하기 --replaceAll로 처리
          */
         return 1;
+	}
+
+	public Connection getDB_CONNECTION() {
+		return DB_CONNECTION;
+	}
+
+	public String getDB_CONNECTION_URL() {
+		return DB_CONNECTION_URL;
+	}
+
+	public String getDB_USER() {
+		return DB_USER;
+	}
+
+	public  String getDB_PASSWORD() {
+		return DB_PASSWORD;
+	}
+
+	public String getDB_SCHEMA() {
+		return DB_SCHEMA;
 	}
 }
 
