@@ -23,4 +23,10 @@ public class SQLBuilder  {
 	public static DeleteSQLBuilder delete_from(String delete_from) {
 		return new DeleteSQLBuilder(delete_from);
 	}
+	
+	public static DropSQLBuilder drop_table(String... drop_table) {
+		return new DropSQLBuilder(drop_table);
+	}
+	
+	
 }
