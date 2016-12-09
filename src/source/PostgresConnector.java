@@ -112,6 +112,7 @@ public class PostgresConnector {
 	//update된 row의 갯수를 int로 리턴
 	public int executeUpdate(String sql) throws SQLException {
 		Statement st = this.conn.createStatement();
+	
 		return st.executeUpdate(sql);
 	}
 	
@@ -121,6 +122,10 @@ public class PostgresConnector {
 	}
 	
 	public int executeDelete(String sql) throws SQLException {
+		return this.executeUpdate(sql);
+	}
+	
+	public int executeDrop(String sql) throws SQLException {
 		return this.executeUpdate(sql);
 	}
 }
