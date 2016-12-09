@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class MakeConnection {
+	
 	private Connection DB_CONNECTION;
 	private String DB_CONNECTION_URL;
 	private String DB_USER;
@@ -17,8 +18,16 @@ public class MakeConnection {
 	
 	//추가됨
 	private String DB_SCHEMA;
+
 	
 	public int Connect() {
+//		String DB_DRIVER = "org.postgresql.Driver";
+//		try {
+//			Class.forName(DB_DRIVER);
+//		} catch (ClassNotFoundException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		Properties props = new Properties();
 		props.setProperty("user",this.DB_USER);
 		props.setProperty("password",this.DB_PASSWORD);

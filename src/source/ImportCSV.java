@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -12,22 +13,36 @@ import java.util.Scanner;
 
 public class ImportCSV {
 
+	MakeConnection mc;
+	Connection conn;
+	String table_name;
+	BufferedReader csv_file;
 	
-	public String defineTableDescription(MakeConnection mc) {
+	ImportCSV() {
+		this.mc = new MakeConnection();
+		mc.takeConnectionInfo();
+		mc.Connect();
+		this.conn = mc.getDB_CONNECTION();
+		defineTableDescription();
+		readCSVFile();
+	}
+	
+	public void defineTableDescription() {
 		
 		//table description 담긴 텍스트 파일 불러오기
-		@SuppressWarnings("resource")
 		Scanner sc = new Scanner(System.in);
 		System.out.println("[Import from CSV]\nPlease specify the filename for table description : ");
         String td = sc.next();
         
         BufferedReader table_description = null;
 		try {
-			table_description = new BufferedReader(new FileReader("./" + td));
+			table_description = new BufferedReader(new FileReader(td));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		sc.close();
 		
 		//각 정보 리스트에 저장
 		String table_name = null;
@@ -82,7 +97,7 @@ public class ImportCSV {
 		if (line.startsWith("PK")) {
 			pair = line.replaceAll(" ", "").split(":");
 			String[] arr = pair[1].split(",");
-			for (int i = 0; i < pair[1].length(); i++) {
+			for (int i = 0; i < arr.length; i++) {
 				primary_keys.add(arr[i]);
 			}
 		}
@@ -107,7 +122,7 @@ public class ImportCSV {
 		//MakeConnection 객체에 있는 connection 가져와 sql문 생성
 		Statement st = null;
 		try {
-			st = mc.getDB_CONNECTION().createStatement();
+			st = this.conn.createStatement();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -143,15 +158,14 @@ public class ImportCSV {
 		}
 	
 	
-        return table_name;
+        this.table_name = table_name;
 	}
 	
 	
 	
 	//사용자가 입력한 파일 이름의 csv파일 읽어 리턴
-	public BufferedReader readCSVFile() {
+	public void readCSVFile() {
 		
-		@SuppressWarnings("resource")
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Please specify the CSV filename : ");
         String csv = sc.next();
@@ -165,12 +179,14 @@ public class ImportCSV {
 			e.printStackTrace();
 		}
 		
-		return csv_file;
+		sc.close();
+		
+		this.csv_file = csv_file;
 	}
 	
 	
 	
-	public int insertIntoTable(MakeConnection mc, String table_name, BufferedReader csv_file) {
+	public int insertIntoTable() {
 		
 		//csv 파일에서 첫 줄만 읽어와 column 이름들 저장
 		String line = null;
@@ -193,7 +209,7 @@ public class ImportCSV {
 		//MakeConnection 객체에 있는 connection 가져와 sql문 생성
 		Statement st = null;
 		try {
-			st = mc.getDB_CONNECTION().createStatement();
+			st = this.conn.createStatement();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -229,6 +245,7 @@ public class ImportCSV {
 		
 		return 1;
 	}
+	
 
 }
 

@@ -36,5 +36,7 @@ public class Drop {
 				System.out.println("<0 table dropped due to error>");
 			}
 		}
+		
+		sc.close();
 	}
 }

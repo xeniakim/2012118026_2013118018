@@ -9,6 +9,8 @@ import function.Select;
 import function.ShowTables;
 import function.Update;
 
+import source.ImportCSV;
+
 public class Menu {
 	Scanner mn;
 	
@@ -22,7 +24,7 @@ public class Menu {
         /*각 case에서 해당 기능으로 연결해주기*/
         switch(menu_selection) {
         case 1:
-        	System.out.println("Import from CSV");
+        	importFromCSV();
         	break;
         case 2:
         	System.out.println("Export to CSV");
@@ -38,6 +40,11 @@ public class Menu {
         	System.out.println("WRONG!");
         		
         }
+	}
+	
+	public void importFromCSV() {
+		ImportCSV importing = new ImportCSV();
+		importing.insertIntoTable();
 	}
 	
 	public boolean manipulateData() {

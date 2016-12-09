@@ -38,5 +38,7 @@ public class Insert {
 		} catch (SQLException e) {
 			System.out.println("<0 row inserted due to error>");
 		}
+		
+		sc.close();
 	}
 }
