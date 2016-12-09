@@ -36,13 +36,13 @@ public class ImportCSV {
         
         BufferedReader table_description = null;
 		try {
-			table_description = new BufferedReader(new FileReader(td));
+			table_description = new BufferedReader(new FileReader("./" + td));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		sc.close();
+
 		
 		//각 정보 리스트에 저장
 		String table_name = null;
@@ -138,10 +138,11 @@ public class ImportCSV {
 			
 			if (column_names != null && column_data_types != null) {
 				sb.append(String.format("%s %s", column_names.get(i), column_data_types.get(i)));
-				if (notnull_columns.contains(column_names)) {
+				if (notnull_columns.contains(column_names.get(i))) {
 					sb.append(" not null");
 				}
 				sb.append(", ");
+				i++;
 			}
 		}
 		
@@ -150,6 +151,9 @@ public class ImportCSV {
 		sb.append(")");
 		
 		String CreateTableSQL = sb.toString();
+		
+		
+		
 		try {
 			st.executeUpdate(CreateTableSQL);
 		} catch (SQLException e) {
@@ -178,8 +182,6 @@ public class ImportCSV {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		sc.close();
 		
 		this.csv_file = csv_file;
 	}
@@ -220,16 +222,24 @@ public class ImportCSV {
 		
 		//파일에서 한 줄씩 읽어와 INSERT문 만듦
 		while (true) {
-			try {
-				line = csv_file.readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+				try {
+					line = csv_file.readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
 			if (line != null) {
-				sb.append(String.format("INSERT INTO %s ", table_name));
+				String[] tuple = line.split(",");
+				
+				
+				//varchar 타입인 것 처리하기 위해 임시로 넣은 라인
+				tuple[1] = "'" + tuple[1] + "'";
+				
+				sb.append(String.format("INSERT INTO %s ", this.table_name));
 				sb.append(String.format("(%s) ", String.join(", ", column_names)));
-				sb.append(String.format("VALUES (%s);", line));
+				sb.append(String.format("VALUES (%s);", String.join(", ", tuple)));
 			} else {
 				break;
 			}
