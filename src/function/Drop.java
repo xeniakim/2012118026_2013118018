@@ -37,6 +37,5 @@ public class Drop {
 			}
 		}
 		
-		sc.close();
 	}
 }
