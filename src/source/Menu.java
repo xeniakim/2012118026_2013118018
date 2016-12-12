@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 import function.Delete;
 import function.DescribeTable;
+import function.Drop;
 import function.Insert;
 import function.Select;
 import function.ShowTables;
@@ -27,7 +28,7 @@ public class Menu {
         	importFromCSV();
         	break;
         case 2:
-        	System.out.println("Export to CSV");
+        	new ExportCSV().export();
         	break;
         case 3:
         	while (true)
@@ -72,7 +73,7 @@ public class Menu {
     		new Update();
     		break;
     	case 7:
-    		System.out.println("Drop Table");
+    		new Drop();
     		break;
     	case 8:
     		System.out.println("Back to main");
