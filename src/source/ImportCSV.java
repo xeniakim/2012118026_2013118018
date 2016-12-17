@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -18,16 +20,30 @@ public class ImportCSV {
 	String table_name;
 	BufferedReader csv_file;
 	
+	List<String> column_names;
+	List<String> column_data_types;
+	List<String> primary_keys;
+	List<String> notnull_columns;
+	
 	ImportCSV() {
+		this.column_names = new ArrayList<String>();
+		this.column_data_types = new ArrayList<String>();
+		this.primary_keys = new ArrayList<String>();
+		this.notnull_columns = new ArrayList<String>();
 		this.mc = new MakeConnection();
 		mc.takeConnectionInfo();
 		mc.Connect();
 		this.conn = mc.getDB_CONNECTION();
-		defineTableDescription();
+		try {
+			defineTableDescription();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		readCSVFile();
 	}
 	
-	public void defineTableDescription() {
+	public void defineTableDescription() throws SQLException {
 		
 		//table description 담긴 텍스트 파일 불러오기
 		Scanner sc = new Scanner(System.in);
@@ -42,17 +58,10 @@ public class ImportCSV {
 			e.printStackTrace();
 		}
 		
-
-		
-		//각 정보 리스트에 저장
-		String table_name = null;
-		List<String> column_names = new ArrayList<String>();
-		List<String> column_data_types = new ArrayList<String>();
-		List<String> primary_keys = new ArrayList<String>();
-		List<String> notnull_columns = new ArrayList<String>();
-		
 		//table name 저장
-        String line = null;
+		String table_name = null;
+		
+		String line = null;
         try {
 			line = table_description.readLine();
 		} catch (IOException e) {
@@ -60,7 +69,7 @@ public class ImportCSV {
 			e.printStackTrace();
 		}
 		
-        //line을 파싱하는 부분, replaceAll로 공백 삭제
+
 		String[] pair = line.replaceAll(" ", "").split(":");
 		
 		table_name = pair[1];
@@ -90,7 +99,7 @@ public class ImportCSV {
 			if (!line.startsWith("Column")) break;
 		    //line을 파싱하는 부분, replaceAll로 공백 삭제
 			pair = line.replaceAll(" ", "").split(":");
-			column_data_types.add(pair[1]);
+			column_data_types.add(pair[1].toLowerCase());
 		}
 		
 		//Primary key 저장
@@ -129,39 +138,50 @@ public class ImportCSV {
 		}
 		
 		//사용자가 입력한 table description대로 CREATE
-		StringBuilder sb = new StringBuilder();
 		
-		sb.append(String.format("CREATE TABLE %s (", table_name));
-		
-		int i = 0;
-		while (i < column_names.size()) {
+		DatabaseMetaData dbm = conn.getMetaData();
+		// check if table is there
+		ResultSet tables = dbm.getTables(null, null, table_name, null);
+		if (tables.next()) {
+			// Table exists
+			System.out.println("Table already exists.");
+		}
+		else {
+			// Table does not exist
+			StringBuilder sb = new StringBuilder();
 			
-			if (column_names != null && column_data_types != null) {
-				sb.append(String.format("%s %s", column_names.get(i), column_data_types.get(i)));
-				if (notnull_columns.contains(column_names.get(i))) {
-					sb.append(" not null");
+			sb.append(String.format("CREATE TABLE %s (", table_name));
+			
+			int i = 0;
+			while (i < column_names.size()) {
+				
+				if (column_names != null && column_data_types != null) {
+					sb.append(String.format("%s %s", column_names.get(i), column_data_types.get(i)));
+					if (notnull_columns.contains(column_names.get(i))) {
+						sb.append(" not null");
+					}
+					sb.append(", ");
+					i++;
 				}
-				sb.append(", ");
-				i++;
+			}
+			
+			sb.append(String.format("PRIMARY KEY (%s)", String.join(",", primary_keys)));
+						
+			sb.append(")");
+			
+			String CreateTableSQL = sb.toString();
+			
+			
+			
+			try {
+				st.executeUpdate(CreateTableSQL);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		
-		sb.append(String.format("PRIMARY KEY (%s)", String.join(",", primary_keys)));
-					
-		sb.append(")");
-		
-		String CreateTableSQL = sb.toString();
-		
-		
-		
-		try {
-			st.executeUpdate(CreateTableSQL);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	
-	
+
         this.table_name = table_name;
 	}
 	
@@ -208,6 +228,13 @@ public class ImportCSV {
 		//until here
 		
 		
+		//csv파일과 테이블의 컬럼 수가 다를 경우 오류 표출
+		if (column_names.length != this.column_names.size()) {
+			System.out.println("Data import failure. (The number of columns does not match between the table description and the CSV file.)");
+			return 0;
+		}
+		
+		
 		//MakeConnection 객체에 있는 connection 가져와 sql문 생성
 		Statement st = null;
 		try {
@@ -220,7 +247,7 @@ public class ImportCSV {
 		
 		StringBuilder sb = new StringBuilder();
 		
-		//파일에서 한 줄씩 읽어와 INSERT문 만듦
+		//파일에서 한 줄씩 읽어와 INSERT문 만들고 삽입
 		while (true) {
 
 				try {
@@ -233,25 +260,33 @@ public class ImportCSV {
 			if (line != null) {
 				String[] tuple = line.split(",");
 				
+				//따옴표 붙여서 넣어줘야 하는 데이터 타입 처리
+				for (int i = 0; i < column_data_types.size(); i++) {
+					String data_type = this.column_data_types.get(i);
+					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
+						tuple[i] = "'" + tuple[i] + "'";
+					}
+				}
 				
-				//varchar 타입인 것 처리하기 위해 임시로 넣은 라인
-				tuple[1] = "'" + tuple[1] + "'";
-				
+				sb.delete(0, sb.length());
 				sb.append(String.format("INSERT INTO %s ", this.table_name));
 				sb.append(String.format("(%s) ", String.join(", ", column_names)));
 				sb.append(String.format("VALUES (%s);", String.join(", ", tuple)));
+				
+				String InsertSQL = sb.toString();
+				try {
+					st.executeUpdate(InsertSQL);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			} else {
 				break;
 			}
+			
 		}
 		
-		String InsertSQL = sb.toString();
-		try {
-			st.executeUpdate(InsertSQL);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		
 		return 1;
 	}
