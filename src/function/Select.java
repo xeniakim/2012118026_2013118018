@@ -20,8 +20,8 @@ public class Select {
 		
 		String[] columns;
 		
-		if (c_input.replaceAll(" ", "").equals("*")) {
-			columns = new String[0];
+		if (c_input.isEmpty()) {
+			columns = null;
 		} else {
 			columns = c_input.replaceAll(" ", "").split(",");
 		}

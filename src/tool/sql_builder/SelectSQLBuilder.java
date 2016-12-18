@@ -11,7 +11,7 @@ public class SelectSQLBuilder {
 	private String _having = null;
 	
 	SelectSQLBuilder(String... select) {
-		if (select.length == 0) {
+		if (select == null || select.length == 0) {
 			this._select = new String[1];
 			this._select[0] = "*";
 		} else {
