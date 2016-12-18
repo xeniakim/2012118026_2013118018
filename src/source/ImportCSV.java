@@ -141,7 +141,7 @@ public class ImportCSV {
 		
 		DatabaseMetaData dbm = this.conn.getMetaData();
 		// check if table is there
-		ResultSet tables = dbm.getTables(null, null, table_name, null);
+		ResultSet tables = dbm.getTables(null, null, table_name.replaceAll("\"", ""), null);
 		if (tables.next()) {
 			// Table exists
 			System.out.println("Table already exists.");
@@ -278,10 +278,19 @@ public class ImportCSV {
 			if (line != null) {
 				String[] tuple = line.split(",");
 				
-				for (int i = 0; i < this.column_data_types.size(); i++) {
+//				//tuple의 요소 개수와 not null이어야 하는 컬럼 수 다를 경우 다음 라인으로 
+//				if (tuple.length < this.notnull_columns.size()) {
+//					failed_tuple_numbers.add(line_no);
+//			        failed_tuple_data.add(line);
+//			        continue;
+//				}
+				
+				for (int i = 0; i < tuple.length; i++) {
 					String data_type = this.column_data_types.get(i);
 					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
-						tuple[i] = "'" + tuple[i] + "'";
+						if (tuple[i] != null) {
+							tuple[i] = "'" + tuple[i] + "'";
+						}
 					}
 				}
 				
@@ -310,14 +319,6 @@ public class ImportCSV {
 			        duplicated = false;
 					continue;
 				}
-				
-//				//따옴표 붙여서 넣어줘야 하는 데이터 타입 처리
-//				for (int i = 0; i < this.column_data_types.size(); i++) {
-//					String data_type = this.column_data_types.get(i);
-//					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
-//						tuple[i] = "'" + tuple[i] + "'";
-//					}
-//				}
 				
 				sb.delete(0, sb.length());
 				sb.append(String.format("INSERT INTO %s ", this.table_name));
