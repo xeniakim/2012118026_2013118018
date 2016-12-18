@@ -72,7 +72,7 @@ public class ImportCSV {
 
 		String[] pair = line.replaceAll(" ", "").split(":");
 		
-		table_name = pair[1];
+		table_name = "\"" + pair[1] + "\"";
 		//until here
 		
 		//컬럼명과 컬럼 데이터타입 저장
@@ -87,7 +87,7 @@ public class ImportCSV {
 			if (!line.startsWith("Column")) break;
 		    //line을 파싱하는 부분, replaceAll로 공백 삭제
 			pair = line.replaceAll(" ", "").split(":");
-			column_names.add(pair[1]);
+			this.column_names.add("\"" + pair[1] + "\"");
 			
 			try {
 				line = table_description.readLine();
@@ -99,7 +99,7 @@ public class ImportCSV {
 			if (!line.startsWith("Column")) break;
 		    //line을 파싱하는 부분, replaceAll로 공백 삭제
 			pair = line.replaceAll(" ", "").split(":");
-			column_data_types.add(pair[1].toLowerCase());
+			this.column_data_types.add(pair[1].toLowerCase());
 		}
 		
 		//Primary key 저장
@@ -107,7 +107,7 @@ public class ImportCSV {
 			pair = line.replaceAll(" ", "").split(":");
 			String[] arr = pair[1].split(",");
 			for (int i = 0; i < arr.length; i++) {
-				primary_keys.add(arr[i]);
+				this.primary_keys.add("\"" + arr[i] + "\"");
 			}
 		}
 		
@@ -116,7 +116,7 @@ public class ImportCSV {
 			pair = line.replaceAll(" ", "").split(":");
 			String[] arr = pair[1].split(",");
 			for (int i = 0; i < pair[1].length(); i++) {
-				notnull_columns.add(arr[i]);
+				this.notnull_columns.add("\"" + arr[i] + "\"");
 			}
 		}
 		
@@ -139,7 +139,7 @@ public class ImportCSV {
 		
 		//사용자가 입력한 table description대로 CREATE
 		
-		DatabaseMetaData dbm = conn.getMetaData();
+		DatabaseMetaData dbm = this.conn.getMetaData();
 		// check if table is there
 		ResultSet tables = dbm.getTables(null, null, table_name, null);
 		if (tables.next()) {
@@ -153,11 +153,12 @@ public class ImportCSV {
 			sb.append(String.format("CREATE TABLE %s (", table_name));
 			
 			int i = 0;
-			while (i < column_names.size()) {
+			while (i < this.column_names.size()) {
 				
-				if (column_names != null && column_data_types != null) {
-					sb.append(String.format("%s %s", column_names.get(i), column_data_types.get(i)));
-					if (notnull_columns.contains(column_names.get(i))) {
+				if (this.column_names != null && this.column_data_types != null) {
+					sb.append(String.format("%s %s", this.column_names.get(i), 
+							this.column_data_types.get(i)));
+					if (this.notnull_columns.contains(this.column_names.get(i))) {
 						sb.append(" not null");
 					}
 					sb.append(", ");
@@ -165,7 +166,7 @@ public class ImportCSV {
 				}
 			}
 			
-			sb.append(String.format("PRIMARY KEY (%s)", String.join(",", primary_keys)));
+			sb.append(String.format("PRIMARY KEY (%s)", String.join(",", this.primary_keys)));
 						
 			sb.append(")");
 			
@@ -208,7 +209,7 @@ public class ImportCSV {
 	
 	
 	
-	public int insertIntoTable() {
+	public int insertIntoTable() throws SQLException {
 		
 		//csv 파일에서 첫 줄만 읽어와 column 이름들 저장
 		String line = null;
@@ -219,9 +220,12 @@ public class ImportCSV {
 			e1.printStackTrace();
 		}
 		
-		String[] column_names = null;
+		String[] csv_column_names = null;
 		if (line != null) {
-			column_names = line.split(",");
+			csv_column_names = line.split(",");
+			for (int i = 0; i < csv_column_names.length; i++) {
+				csv_column_names[i] = "\"" + csv_column_names[i] + "\"";
+			}
 		} else {
 			return 0;
 		}
@@ -229,69 +233,113 @@ public class ImportCSV {
 		
 		
 		//csv파일과 테이블의 컬럼 수가 다를 경우 오류 표출
-		if (column_names.length != this.column_names.size()) {
+		if (csv_column_names.length != this.column_names.size()) {
 			System.out.println("Data import failure. (The number of columns does not match between the table description and the CSV file.)");
 			return 0;
 		}
 		
+		//csv에 있는 컬럼 순서와 위치대로 primary key 저장
+		List<String> csv_primary_keys = new ArrayList<String>();
+		List<Integer> csv_primary_key_locations = new ArrayList<Integer>();
+		for (int i = 0; i < csv_column_names.length; i++) {
+			for (int j = 0; j < this.primary_keys.size(); j++) {
+				if (csv_column_names[i].equals(this.primary_keys.get(j))) {
+					csv_primary_keys.add(this.primary_keys.get(j));
+					csv_primary_key_locations.add(i);
+				}
+			}
+		}
 		
 		//MakeConnection 객체에 있는 connection 가져와 sql문 생성
 		Statement st = null;
-		try {
-			st = this.conn.createStatement();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		st = this.conn.createStatement();
+	
 		
 		StringBuilder sb = new StringBuilder();
 		
-		//파일에서 한 줄씩 읽어와 INSERT문 만들고 삽입
+		
+		//파일에서 한 줄씩 읽어와 검사 후 이상이 없으면 INSERT문 만들고 삽입
+		boolean duplicated = false;
+		int line_no = 1;
+		List<Integer> failed_tuple_numbers = new ArrayList<Integer>();
+		List<String> failed_tuple_data = new ArrayList<String>();
+		
 		while (true) {
-
-				try {
-					line = csv_file.readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
+			line_no++;
+			
+			try {
+				line = csv_file.readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+				
+			
 			if (line != null) {
 				String[] tuple = line.split(",");
 				
-				//따옴표 붙여서 넣어줘야 하는 데이터 타입 처리
-				for (int i = 0; i < column_data_types.size(); i++) {
+				for (int i = 0; i < this.column_data_types.size(); i++) {
 					String data_type = this.column_data_types.get(i);
 					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
 						tuple[i] = "'" + tuple[i] + "'";
 					}
 				}
 				
+				//primary key value가 중복되는 레코드 검사
+				Statement isThereRecord = null;
+				for (int i = 0; i < csv_primary_keys.size(); i++) {
+					String query = "SELECT * FROM" + table_name + 
+							"WHERE " + csv_primary_keys.get(i) + "= " + 
+							tuple[csv_primary_key_locations.get(i)];
+					isThereRecord = conn.createStatement();
+					ResultSet rs = isThereRecord.executeQuery(query);
+				    if (rs != null) {
+				    	while (rs.next()) {
+				        	System.out.println("result set has got something");
+				        	duplicated = true;
+				        	break;
+				    	}
+				    } else {
+				        continue;
+				    }
+				}
+			
+				if (duplicated) {
+			        failed_tuple_numbers.add(line_no);
+			        failed_tuple_data.add(line);
+			        duplicated = false;
+					continue;
+				}
+				
+//				//따옴표 붙여서 넣어줘야 하는 데이터 타입 처리
+//				for (int i = 0; i < this.column_data_types.size(); i++) {
+//					String data_type = this.column_data_types.get(i);
+//					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
+//						tuple[i] = "'" + tuple[i] + "'";
+//					}
+//				}
+				
 				sb.delete(0, sb.length());
 				sb.append(String.format("INSERT INTO %s ", this.table_name));
-				sb.append(String.format("(%s) ", String.join(", ", column_names)));
+				sb.append(String.format("(%s) ", String.join(", ", csv_column_names)));
 				sb.append(String.format("VALUES (%s);", String.join(", ", tuple)));
 				
 				String InsertSQL = sb.toString();
-				try {
-					st.executeUpdate(InsertSQL);
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				st.executeUpdate(InsertSQL);
+
 			} else {
 				break;
 			}
 			
 		}
 		
-		
-		
+		System.out.println(String.format("Data import completed. " +
+				"(Insertion Success : %s, Insertion Failure : %s)", 
+				line_no - 2 - failed_tuple_numbers.size(), failed_tuple_numbers.size()));
+		for (int i = 0; i < failed_tuple_numbers.size(); i++) {
+			System.out.println(String.format("Failed tuple : %d line in CSV - %s", 
+					failed_tuple_numbers.get(i), failed_tuple_data.get(i)));
+		}
 		return 1;
 	}
-	
-
 }
-
-
