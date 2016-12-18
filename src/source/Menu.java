@@ -1,5 +1,6 @@
 package source;
 
+import java.sql.SQLException;
 import java.util.Scanner;
 
 import function.Delete;
@@ -45,7 +46,12 @@ public class Menu {
 	
 	public void importFromCSV() {
 		ImportCSV importing = new ImportCSV();
-		importing.insertIntoTable();
+		try {
+			importing.insertIntoTable();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean manipulateData() {
