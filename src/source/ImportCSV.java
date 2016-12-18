@@ -105,18 +105,28 @@ public class ImportCSV {
 		//Primary key 저장
 		if (line.startsWith("PK")) {
 			pair = line.replaceAll(" ", "").split(":");
-			String[] arr = pair[1].split(",");
-			for (int i = 0; i < arr.length; i++) {
-				this.primary_keys.add("\"" + arr[i] + "\"");
+			String[] pk_arr = pair[1].split(",");
+			for (int i = 0; i < pk_arr.length; i++) {
+				this.primary_keys.add("\"" + pk_arr[i] + "\"");
+			}
+			
+			try {
+				line = table_description.readLine();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
 		}
 		
 		//not null constraint 있는 컬럼 저장
-		if (line.startsWith("Not NULL")) {
+		if (line != null && line.startsWith("Not NULL")) {
 			pair = line.replaceAll(" ", "").split(":");
-			String[] arr = pair[1].split(",");
-			for (int i = 0; i < pair[1].length(); i++) {
-				this.notnull_columns.add("\"" + arr[i] + "\"");
+			String[] nn_arr = pair[1].split(",");
+			int nn_loc;
+			for (int i = 0; i < nn_arr.length; i++) {
+				nn_arr[i] = nn_arr[i].replaceAll("Column", "");
+				nn_loc = Integer.parseInt(nn_arr[i]) - 1;
+				this.notnull_columns.add(this.column_names.get(nn_loc));
 			}
 		}
 		
@@ -238,6 +248,8 @@ public class ImportCSV {
 			return 0;
 		}
 		
+		
+		
 		//csv에 있는 컬럼 순서와 위치대로 primary key 저장
 		List<String> csv_primary_keys = new ArrayList<String>();
 		List<Integer> csv_primary_key_locations = new ArrayList<Integer>();
@@ -260,6 +272,7 @@ public class ImportCSV {
 		
 		//파일에서 한 줄씩 읽어와 검사 후 이상이 없으면 INSERT문 만들고 삽입
 		boolean duplicated = false;
+		boolean notnull_is_null = false;
 		int line_no = 1;
 		List<Integer> failed_tuple_numbers = new ArrayList<Integer>();
 		List<String> failed_tuple_data = new ArrayList<String>();
@@ -276,41 +289,67 @@ public class ImportCSV {
 				
 			
 			if (line != null) {
-				String[] tuple = line.split(",");
-				
-//				//tuple의 요소 개수와 not null이어야 하는 컬럼 수 다를 경우 다음 라인으로 
-//				if (tuple.length < this.notnull_columns.size()) {
-//					failed_tuple_numbers.add(line_no);
-//			        failed_tuple_data.add(line);
-//			        continue;
-//				}
+				//String[] tuple = line.split(",");
+
+				String converted = line.replaceAll(",", ",\0");
+				String[] tuple = converted.split(",");
+				for (int i = 0; i < tuple.length; i++)
+			         tuple[i] = tuple[i].replaceAll("\0", "");
 				
 				for (int i = 0; i < tuple.length; i++) {
 					String data_type = this.column_data_types.get(i);
 					if (data_type.startsWith("char") || data_type.startsWith("varchar") || data_type.startsWith("date") || data_type.startsWith("time")) {
-						if (tuple[i] != null) {
+						if (!tuple[i].equals("")) {
 							tuple[i] = "'" + tuple[i] + "'";
 						}
 					}
 				}
 				
+				//notnull constraint 위배하는 경우 검사
+				List<String> csv_notnull_columns = new ArrayList<String>();
+				List<Integer> csv_notnull_column_locations = new ArrayList<Integer>();
+				for (int i = 0; i < csv_column_names.length; i++) {
+					for (int j = 0; j < this.notnull_columns.size(); j++) {
+						if (csv_column_names[i].equals(this.notnull_columns.get(j))) {
+							csv_notnull_columns.add(this.notnull_columns.get(j));
+							csv_notnull_column_locations.add(i);
+						}
+					}
+				}
+				
+				for (int i = 0; i < csv_notnull_column_locations.size(); i++) {
+					if (tuple[csv_notnull_column_locations.get(i)].equals("")) {
+						notnull_is_null = true;
+				        break;
+					}
+				}
+				
+				if (notnull_is_null) {
+					failed_tuple_numbers.add(line_no);
+					failed_tuple_data.add(line);
+					notnull_is_null = false;
+					continue;
+				}
+				
 				//primary key value가 중복되는 레코드 검사
 				Statement isThereRecord = null;
 				for (int i = 0; i < csv_primary_keys.size(); i++) {
-					String query = "SELECT * FROM" + table_name + 
-							"WHERE " + csv_primary_keys.get(i) + "= " + 
-							tuple[csv_primary_key_locations.get(i)];
-					isThereRecord = conn.createStatement();
-					ResultSet rs = isThereRecord.executeQuery(query);
-				    if (rs != null) {
-				    	while (rs.next()) {
-				        	System.out.println("result set has got something");
-				        	duplicated = true;
-				        	break;
-				    	}
-				    } else {
-				        continue;
-				    }
+					if (!tuple[csv_primary_key_locations.get(i)].equals("")) {
+						String query = "SELECT * FROM" + table_name + 
+								"WHERE " + csv_primary_keys.get(i) + "= " + 
+								tuple[csv_primary_key_locations.get(i)];
+						isThereRecord = conn.createStatement();
+						ResultSet rs = isThereRecord.executeQuery(query);
+					    if (rs != null) {
+					    	while (rs.next()) {
+					        	System.out.println("result set has got something");
+					        	duplicated = true;
+					        	break;
+					    	}
+					    } else {
+					        continue;
+					    }
+					}
 				}
 			
 				if (duplicated) {
@@ -318,6 +357,12 @@ public class ImportCSV {
 			        failed_tuple_data.add(line);
 			        duplicated = false;
 					continue;
+				}
+				
+				for (int i = 0; i < tuple.length; i++) {
+					if (tuple[i] == null || tuple[i].equals("")) {
+						tuple[i] = null;
+					}
 				}
 				
 				sb.delete(0, sb.length());
