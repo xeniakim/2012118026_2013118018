@@ -39,6 +39,5 @@ public class Insert {
 			System.out.println("<0 row inserted due to error>");
 		}
 		
-		sc.close();
 	}
 }
