@@ -342,7 +342,6 @@ public class ImportCSV {
 						ResultSet rs = isThereRecord.executeQuery(query);
 					    if (rs != null) {
 					    	while (rs.next()) {
-					        	System.out.println("result set has got something");
 					        	duplicated = true;
 					        	break;
 					    	}
