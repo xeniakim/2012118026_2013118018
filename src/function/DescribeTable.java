@@ -24,6 +24,6 @@ public class DescribeTable {
 			System.out.println(e.getMessage());
 		}
 		
-		sc.close();
+		
 	}
 }
