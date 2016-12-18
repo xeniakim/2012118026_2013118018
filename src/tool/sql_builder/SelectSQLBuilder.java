@@ -80,7 +80,7 @@ public class SelectSQLBuilder {
 		
 		if (this._order_by != null) { //order_by가 지정되었는데
 			if (this._order_how == null) { //정렬 방식은 지정되지 않았다면
-				sb.append(String.format("ORDER BY %s\n", String.join(", ", this._select)));
+				sb.append(String.format("ORDER BY %s\n", String.join(", ", this._order_by)));
 			} else { //정렬 방식도 지정되었다면
 				String[] pairs = new String[this._order_by.length]; //(column명 정렬방식) pair
 				for (int i = 0; i < this._order_by.length; i++) {
@@ -94,7 +94,7 @@ public class SelectSQLBuilder {
 		if (this._group_by != null)
 			sb.append(String.format("GROUP BY %s\n", this._group_by));
 		if (this._having != null)
-			sb.append(String.format("HAVING %s\n", this._having));
+			sb.append(String.format("HAVING %s\n", this._having));	
 		
 		sb.replace(sb.length() - 1, sb.length() - 1, ";");
 		
